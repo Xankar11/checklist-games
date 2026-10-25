@@ -1,0 +1,9 @@
+node_modules/
+.cache/
+.DS_Store
+Thumbs.db
+
+# временные файлы и отладочные данные
+api.json
+jina.txt
+mc-*.json
