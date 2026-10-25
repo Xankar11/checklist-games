@@ -7,3 +7,8 @@ Thumbs.db
 api.json
 jina.txt
 mc-*.json
+
+# локальные инструменты
+.agents/
+.opencode/
+skills-lock.json

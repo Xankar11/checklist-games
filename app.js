@@ -5,6 +5,11 @@
   const META = window.DATA_META || {};
   const TOTAL = GAMES.length;
   const STORAGE_KEY = 'mc250-progress-v1';
+  const THEME_KEY = 'mc250-theme';
+  const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+  const SLUG_ALIASES = window.GAME_ALIASES && typeof window.GAME_ALIASES === 'object'
+    ? window.GAME_ALIASES
+    : {};
   const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
   const MONTHS_LONG = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 
@@ -77,6 +82,7 @@
   let saveTimer = null;
   let toastTimer = null;
   let lastRandomSlug = null;
+  let spotlightSlug = null;
   const cardRefs = new Map();
 
   function node(tag, className, text) {
@@ -175,10 +181,16 @@
     topPercent: $('#topPercent'),
     topProgress: $('#topProgress'),
     topBar: $('#topBar'),
-    ringValue: $('#ringValue'),
     heroPercent: $('#heroPercent'),
     heroCount: $('#heroCount'),
     heroRemaining: $('#heroRemaining'),
+    heroTicks: $('#heroTicks'),
+    spotlightOpen: $('#spotlightOpen'),
+    spotlightLabel: $('#spotlightLabel'),
+    spotlightCover: $('#spotlightCover'),
+    spotlightRank: $('#spotlightRank'),
+    spotlightTitle: $('#spotlightTitle'),
+    spotlightMeta: $('#spotlightMeta'),
     statDone: $('#statDone'),
     statAvg: $('#statAvg'),
     statAvgUnit: $('#statAvgUnit'),
@@ -232,6 +244,7 @@
     confirmTitle: $('#confirmTitle'),
     confirmText: $('#confirmText'),
     confirmOk: $('#confirmOk'),
+    themeToggle: $('[data-theme-toggle]'),
     toast: $('#toast'),
     toastText: $('#toastText'),
     toastAction: $('#toastAction')
@@ -323,19 +336,18 @@
   function buildCards() {
     const fragment = document.createDocumentFragment();
     for (const game of GAMES) {
-      const card = node('article', 'card');
+      const card = node('article', 'game-card');
       card.dataset.slug = game.slug;
 
-      const open = node('button', 'card__open');
-      open.type = 'button';
-
-      const cover = node('span', 'card__cover');
+      const visual = node('div', 'game-card__visual');
+      const cover = node('div', 'game-card__cover');
       cover.dataset.fallback = game.title.slice(0, 2).toUpperCase();
 
       const img = document.createElement('img');
       img.src = game.cover;
-      img.alt = `Обложка ${game.title}`;
-      img.loading = 'lazy';
+      img.alt = '';
+      img.loading = game.rank <= 10 ? 'eager' : 'lazy';
+      if (game.rank <= 5) img.fetchPriority = 'high';
       img.decoding = 'async';
       img.width = 340;
       img.height = 465;
@@ -344,30 +356,35 @@
         img.remove();
       });
 
-      const rank = node('span', 'rank-badge', `№ ${game.rank}`);
-      rank.setAttribute('aria-hidden', 'true');
-      const score = node('span', `score-badge ${scoreClass(game.score)}`, String(game.score));
+      const rank = node('span', 'game-card__rank', `№ ${game.rank}`);
+      const score = node('span', `game-card__score ${scoreClass(game.score)}`, String(game.score));
+      score.prepend(node('span', 'visually-hidden', 'Metascore '));
       score.title = `Metascore ${game.score}`;
-      score.setAttribute('aria-hidden', 'true');
-      cover.append(img, rank, score);
 
-      const info = node('span', 'card__info');
-      const title = node('h3', 'card__title', game.title);
-      const genres = game.families.slice(0, 2).map((family) => FAMILIES[family]).join(' / ');
-      const meta = node('span', 'card__meta', `${game.year} · ${genres}`);
-      info.append(title, meta);
-      open.append(cover, info);
-
-      const footer = node('div', 'card__footer');
-      const status = node('span', 'card__status', 'Не пройдено');
-      const rating = node('span', 'card__rating');
-      rating.hidden = true;
-      const check = node('button', 'card__check');
+      const check = node('button', 'game-card__check');
       check.type = 'button';
+      check.setAttribute('aria-pressed', 'false');
       check.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-      footer.append(status, rating, check);
+      cover.append(img, rank, score);
+      visual.append(cover, check);
 
-      card.append(open, footer);
+      const body = node('div', 'game-card__body');
+      const genres = game.families.slice(0, 2).map((family) => FAMILIES[family]).join(' / ');
+      const meta = node('p', 'game-card__meta', `${game.year} · ${genres}`);
+      const title = node('h3', 'game-card__title');
+      const open = node('button', 'game-card__open', game.title);
+      open.type = 'button';
+      open.title = game.title;
+      title.append(open);
+
+      const footer = node('div', 'game-card__footer');
+      const status = node('span', 'game-card__status', 'Ещё не пройдено');
+      const rating = node('span', 'game-card__rating');
+      rating.hidden = true;
+      footer.append(status, rating);
+      body.append(meta, title, footer);
+
+      card.append(visual, body);
       fragment.append(card);
       cardRefs.set(game.slug, { card, open, cover, img, status, rating, check });
     }
@@ -381,20 +398,20 @@
     const done = Boolean(entry);
     const date = entry && entry.date ? formatShortDate(entry.date) : '';
     const longDate = entry && entry.date ? formatLongDate(entry.date) : '';
-    const suffix = done ? `, пройдено${longDate ? ` ${longDate}` : ''}` : ', не пройдено';
 
     refs.card.classList.toggle('is-done', done);
-    refs.status.textContent = done ? `✓ Пройдено${date ? ` · ${date}` : ''}` : 'Не пройдено';
+    refs.status.textContent = done
+      ? `Пройдено${date ? ` · ${date}` : ''}`
+      : 'Ещё не пройдено';
     refs.status.title = longDate;
     refs.rating.hidden = !(entry && entry.rating);
-    refs.rating.textContent = entry && entry.rating ? `${entry.rating}/10` : '';
+    refs.rating.textContent = entry && entry.rating ? `${entry.rating} / 10` : '';
     refs.rating.title = entry && entry.rating ? `Моя оценка: ${entry.rating} из 10` : '';
     refs.check.setAttribute('aria-pressed', String(done));
     refs.check.setAttribute('aria-label', done
       ? `Снять отметку с «${game.title}»`
       : `Отметить «${game.title}» как пройденную`);
     refs.check.title = done ? 'Снять отметку' : 'Отметить как пройденную';
-    refs.open.setAttribute('aria-label', `${game.title}, ${game.year}, Metascore ${game.score}${suffix}. Открыть подробности`);
   }
 
   function buildRatingButtons() {
@@ -422,6 +439,54 @@
     els.ratingClear.hidden = !rating;
   }
 
+  function buildProgressTicks() {
+    if (!els.heroTicks) return;
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < 50; index += 1) {
+      const tick = node('span', 'progress-tick');
+      tick.style.setProperty('--fill', '0%');
+      fragment.append(tick);
+    }
+    els.heroTicks.append(fragment);
+  }
+
+  function updateProgressTicks(done) {
+    if (!els.heroTicks) return;
+    const ticks = $$('.progress-tick', els.heroTicks);
+    if (!ticks.length) return;
+    const perTick = TOTAL / ticks.length;
+    ticks.forEach((tick, index) => {
+      const fill = Math.max(0, Math.min(1, (done - index * perTick) / perTick));
+      tick.style.setProperty('--fill', `${fill * 100}%`);
+    });
+  }
+
+  function updateSpotlight() {
+    if (!els.spotlightOpen) return;
+    const next = GAMES.find((game) => !progress[game.slug]) || null;
+    spotlightSlug = next ? next.slug : null;
+
+    if (!next) {
+      els.spotlightOpen.disabled = true;
+      els.spotlightOpen.classList.add('is-complete');
+      els.spotlightLabel.textContent = 'итог коллекции';
+      els.spotlightCover.hidden = true;
+      els.spotlightRank.textContent = `${TOTAL} / ${TOTAL}`;
+      els.spotlightTitle.textContent = 'Полка собрана';
+      els.spotlightMeta.textContent = `Все ${TOTAL} игр пройдены`;
+      return;
+    }
+
+    els.spotlightOpen.disabled = false;
+    els.spotlightOpen.classList.remove('is-complete');
+    els.spotlightLabel.textContent = 'следующая цель';
+    els.spotlightCover.hidden = false;
+    els.spotlightCover.src = next.cover;
+    els.spotlightRank.textContent = `№ ${next.rank}`;
+    els.spotlightTitle.textContent = next.title;
+    els.spotlightMeta.textContent = `${next.year} · Metascore ${next.score}`;
+  }
+
   function updateStats() {
     const entries = Object.values(progress).filter((entry) => entry && entry.done);
     const done = entries.length;
@@ -442,8 +507,8 @@
     els.topPercent.textContent = percentLabel;
     els.topProgress.setAttribute('aria-valuemax', String(TOTAL));
     els.topProgress.setAttribute('aria-valuenow', String(done));
+    els.topProgress.setAttribute('aria-valuetext', `${done} из ${TOTAL}, ${percentLabel}`);
     els.topBar.style.width = `${percentExact}%`;
-    els.ringValue.style.strokeDashoffset = String(100 - percentExact);
     els.heroPercent.textContent = percentLabel;
     els.heroCount.textContent = `${done} из ${TOTAL}`;
     els.heroRemaining.textContent = left === 0
@@ -458,6 +523,8 @@
     els.countDone.textContent = String(done);
     els.countNot.textContent = String(left);
     els.footerCount.textContent = `${done} из ${TOTAL}`;
+    updateProgressTicks(done);
+    updateSpotlight();
   }
 
   function compareGames(a, b) {
@@ -608,6 +675,63 @@
     return local.toISOString().slice(0, 10);
   }
 
+  function resolveSlug(slug) {
+    let current = String(slug || '');
+    const seen = new Set();
+    for (let i = 0; i < 8; i++) {
+      if (!SLUG_ALIASES[current]) return current;
+      if (seen.has(current)) return '';
+      seen.add(current);
+      current = String(SLUG_ALIASES[current] || '');
+    }
+    return '';
+  }
+
+  function normalizeEntry(value) {
+    if (value === true) return { done: true, date: '', rating: null };
+    if (!value || typeof value !== 'object' || Array.isArray(value) || value.done === false) return null;
+    const date = isValidDate(value.date) ? value.date : '';
+    const ratingValue = Number(value.rating);
+    const rating = Number.isInteger(ratingValue) && ratingValue >= 1 && ratingValue <= 10 ? ratingValue : null;
+    return { done: true, date, rating };
+  }
+
+  function collectProgress(source) {
+    const direct = {};
+    const viaAlias = {};
+    let unknown = 0;
+
+    for (const [slug, value] of Object.entries(source)) {
+      const entry = normalizeEntry(value);
+      if (!entry) {
+        unknown += 1;
+        continue;
+      }
+
+      if (slugSet.has(slug)) {
+        direct[slug] = entry;
+        continue;
+      }
+
+      const target = resolveSlug(slug);
+      if (!target || !slugSet.has(target)) {
+        unknown += 1;
+        continue;
+      }
+      if (!viaAlias[target]) viaAlias[target] = entry;
+    }
+
+    // A real entry for the surviving version always wins over a removed edition.
+    let migrated = 0;
+    for (const [slug, entry] of Object.entries(viaAlias)) {
+      if (direct[slug]) continue;
+      direct[slug] = entry;
+      migrated += 1;
+    }
+
+    return { progress: direct, unknown, migrated };
+  }
+
   function readStorage() {
     const result = { progress: {}, savedAt: null };
     try {
@@ -622,19 +746,7 @@
           ? parsed.progress
           : parsed;
 
-      for (const [slug, value] of Object.entries(source)) {
-        if (!slugSet.has(slug) || !value) continue;
-        if (value === true) {
-          result.progress[slug] = { done: true, date: '', rating: null };
-          continue;
-        }
-        if (typeof value !== 'object' || Array.isArray(value) || value.done === false) continue;
-        const date = isValidDate(value.date) ? value.date : '';
-        const ratingValue = Number(value.rating);
-        const rating = Number.isInteger(ratingValue) && ratingValue >= 1 && ratingValue <= 10 ? ratingValue : null;
-        result.progress[slug] = { done: true, date, rating };
-      }
-
+      result.progress = collectProgress(source).progress;
       if (typeof parsed.savedAt === 'string') result.savedAt = parsed.savedAt;
     } catch (error) {
       // A broken JSON should not make the whole checklist unusable.
@@ -784,7 +896,7 @@
   }
 
   function renderGameInfo(game, random) {
-    els.gameEyebrow.textContent = random ? 'Случайная игра из списка' : 'Игра из списка Top 250';
+    els.gameEyebrow.textContent = random ? 'случайный выбор' : 'карточка из коллекции';
     els.gameCover.src = game.cover;
     els.gameCover.alt = `Обложка ${game.title}`;
     els.gameTitle.textContent = game.title;
@@ -922,6 +1034,34 @@
     openGame(game.slug, { random: true });
   }
 
+  function focusNextVisibleCard(card) {
+    const cards = Array.from(els.gameGrid.children);
+    const index = cards.indexOf(card);
+    const candidates = index >= 0
+      ? [...cards.slice(index + 1), ...cards.slice(0, index)]
+      : cards;
+    const next = candidates.find((candidate) => !candidate.hidden);
+    const target = next && $('.game-card__open', next);
+    if (target) {
+      target.focus({ preventScroll: true });
+      return;
+    }
+    els.resultsCount.tabIndex = -1;
+    els.resultsCount.focus({ preventScroll: true });
+  }
+
+  function restoreCardFocus(slug) {
+    const refs = cardRefs.get(slug);
+    if (!refs) return;
+    window.requestAnimationFrame(() => {
+      if (refs.card.hidden) {
+        focusNextVisibleCard(refs.card);
+      } else {
+        refs.check.focus({ preventScroll: true });
+      }
+    });
+  }
+
   function toggleCard(slug) {
     const game = gameBySlug.get(slug);
     if (!game) return;
@@ -931,6 +1071,7 @@
       delete progress[slug];
       persist();
       syncAll();
+      restoreCardFocus(slug);
       showToast(`«${game.title}»: отметка снята`, {
         label: 'Вернуть',
         onClick: () => {
@@ -946,15 +1087,11 @@
     progress[slug] = { done: true, date: todayISO(), rating: null };
     persist();
     syncAll();
+    restoreCardFocus(slug);
     showToast(`«${game.title}» отмечена как пройденная`, {
       label: 'Дата и оценка',
       onClick: () => openGame(slug)
     });
-
-    const refs = cardRefs.get(slug);
-    if (refs && !refs.card.hidden) {
-      window.requestAnimationFrame(() => refs.check.focus({ preventScroll: true }));
-    }
   }
 
   /* ---------- Import / export ---------- */
@@ -997,27 +1134,8 @@
   }
 
   function sanitizeImported(source) {
-    const imported = {};
-    let unknown = 0;
-    for (const [slug, value] of Object.entries(source)) {
-      if (!slugSet.has(slug) || !value) {
-        unknown += 1;
-        continue;
-      }
-      if (value === true) {
-        imported[slug] = { done: true, date: '', rating: null };
-        continue;
-      }
-      if (typeof value !== 'object' || Array.isArray(value) || value.done === false) {
-        unknown += 1;
-        continue;
-      }
-      const date = isValidDate(value.date) ? value.date : '';
-      const ratingValue = Number(value.rating);
-      const rating = Number.isInteger(ratingValue) && ratingValue >= 1 && ratingValue <= 10 ? ratingValue : null;
-      imported[slug] = { done: true, date, rating };
-    }
-    return { imported, unknown };
+    const result = collectProgress(source);
+    return { imported: result.progress, unknown: result.unknown, migrated: result.migrated };
   }
 
   async function handleImport(file) {
@@ -1098,6 +1216,13 @@
 
   /* ---------- Events ---------- */
   function bindEvents() {
+    if (els.themeToggle) {
+      els.themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+        applyTheme(current === 'dark' ? 'light' : 'dark', true);
+      });
+    }
+
     els.searchInput.addEventListener('input', () => {
       state.search = els.searchInput.value;
       syncSearchUI();
@@ -1150,16 +1275,22 @@
     els.resetEmpty.addEventListener('click', resetFilters);
 
     els.gameGrid.addEventListener('click', (event) => {
-      const card = event.target.closest('.card');
+      const card = event.target.closest('.game-card');
       if (!card) return;
       const slug = card.dataset.slug;
       if (!slug) return;
-      if (event.target.closest('.card__check')) {
+      if (event.target.closest('.game-card__check')) {
         toggleCard(slug);
         return;
       }
-      if (event.target.closest('.card__open')) openGame(slug);
+      if (event.target.closest('.game-card__open')) openGame(slug);
     });
+
+    if (els.spotlightOpen) {
+      els.spotlightOpen.addEventListener('click', () => {
+        if (spotlightSlug) openGame(spotlightSlug);
+      });
+    }
 
     for (const button of $$('[data-random]')) {
       button.addEventListener('click', openRandom);
@@ -1231,15 +1362,72 @@
   }
 
   /* ---------- Init ---------- */
+  function getSavedTheme() {
+    try {
+      const value = localStorage.getItem(THEME_KEY);
+      return value === 'dark' || value === 'light' ? value : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function getInitialTheme() {
+    const saved = getSavedTheme();
+    if (saved) return saved;
+    const current = document.documentElement.dataset.theme;
+    if (current === 'dark' || current === 'light') return current;
+    return themeMedia.matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(theme, persist = false) {
+    const next = theme === 'dark' ? 'dark' : 'light';
+    const root = document.documentElement;
+    root.dataset.theme = next;
+    root.style.colorScheme = next;
+    root.style.backgroundColor = next === 'dark' ? '#0b0d1a' : '#e9edff';
+
+    if (els.themeToggle) {
+      const label = next === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему';
+      els.themeToggle.setAttribute('aria-label', label);
+      els.themeToggle.setAttribute('title', label);
+    }
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', next === 'dark' ? '#0b0d1a' : '#e9edff');
+
+    if (persist) {
+      try {
+        localStorage.setItem(THEME_KEY, next);
+      } catch (error) {
+        // Тема всё равно применится до перезагрузки.
+      }
+    }
+  }
+
+  function initTheme() {
+    applyTheme(getInitialTheme());
+    const onSystemThemeChange = (event) => {
+      if (getSavedTheme()) return;
+      applyTheme(event.matches ? 'dark' : 'light');
+    };
+    if (typeof themeMedia.addEventListener === 'function') {
+      themeMedia.addEventListener('change', onSystemThemeChange);
+    } else if (typeof themeMedia.addListener === 'function') {
+      themeMedia.addListener(onSystemThemeChange);
+    }
+  }
+
   function init() {
     storageOk = canUseStorage();
     const loaded = readStorage();
     progress = loaded.progress;
     savedAt = loaded.savedAt;
+    initTheme();
 
     buildGenreOptions();
     buildPlatformOptions();
     buildDecadeOptions();
+    buildProgressTicks();
     buildCards();
     buildRatingButtons();
     bindEvents();

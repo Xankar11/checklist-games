@@ -3,112 +3,151 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ТОП 250 игр — личный чек-лист</title>
-  <meta name="description" content="Личный чек-лист по топ-250 игр Metacritic: отмечайте пройденное, ставьте оценку и следите за прогрессом.">
-  <meta name="theme-color" content="#0a0c10">
-  <meta property="og:title" content="ТОП 250 игр — личный чек-лист">
-  <meta property="og:description" content="Отмечайте пройденные игры из топ-250 Metacritic и ставьте личную оценку.">
+  <title>полка 250 — коллекция легенд</title>
+  <meta name="description" content="Личная полка 250 лучших игр по Metascore, без переизданий и сборников: отмечайте пройденное и ставьте оценки.">
+  <meta name="theme-color" content="#e9edff">
+  <meta property="og:title" content="полка 250 — коллекция легенд">
+  <meta property="og:description" content="250 легенд на одной полке. Личный чек-лист по Metascore, без переизданий и сборников.">
   <meta property="og:type" content="website">
+  <script>
+    (() => {
+      let theme = 'light';
+      try {
+        const saved = localStorage.getItem('mc250-theme');
+        theme = saved === 'dark' || saved === 'light'
+          ? saved
+          : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      } catch (error) {}
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+      document.documentElement.style.backgroundColor = theme === 'dark' ? '#0b0d1a' : '#e9edff';
+    })();
+  </script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=3">
-  <script src="data/games.js?v=3" defer></script>
-  <script src="app.js?v=3" defer></script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="data/games.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body id="top">
   <a class="skip-link" href="#collection">Перейти к списку игр</a>
 
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="#top" aria-label="ТОП 250 — наверх">
+  <header class="site-header">
+    <div class="header__inner">
+      <a class="brand" href="#top" aria-label="полка 250 — наверх">
         <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <span></span><span></span><span></span><span></span>
         </span>
-        <span class="brand__text"><strong>ТОП 250</strong><span>игровой чек-лист</span></span>
+        <span class="brand__word">полка</span>
+        <span class="brand__edition">250</span>
       </a>
 
-      <div class="topbar__progress">
-        <div class="topbar__progress-label"><span><b id="topDone">0</b> / 250</span><span id="topPercent">0%</span></div>
-        <div class="progressbar" id="topProgress" role="progressbar" aria-label="Прогресс прохождения" aria-valuemin="0" aria-valuemax="250" aria-valuenow="0">
+      <div class="header__progress">
+        <div class="header__progress-label">
+          <span><b id="topDone">0</b> / 250</span>
+          <span id="topPercent">0%</span>
+        </div>
+        <div class="header__rail" id="topProgress" role="progressbar" aria-label="Прогресс прохождения" aria-valuemin="0" aria-valuemax="250" aria-valuenow="0">
           <span id="topBar"></span>
         </div>
       </div>
 
-      <div class="topbar__actions">
-        <button class="btn btn--ghost topbar__data" type="button" data-open-data aria-label="Данные и резервная копия">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
-          <span>Данные</span>
+      <div class="header__actions">
+        <button class="button button--line header__action theme-toggle" type="button" data-theme-toggle aria-label="Включить тёмную тему" title="Включить тёмную тему">
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
         </button>
-        <button class="btn btn--primary" type="button" data-random aria-label="Что пройти дальше?">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z"/><path d="M18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
-          <span>Что пройти?</span>
+        <button class="button button--line header__action" type="button" data-open-data aria-label="Сейв и резервная копия">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v6h7V4M8 20v-6h8v6"/></svg>
+          <span>сейв</span>
+        </button>
+        <button class="button button--ink header__action" type="button" data-random aria-label="Рулетка — случайная игра">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="15" r="1"/><circle cx="15" cy="9" r="1"/><circle cx="9" cy="15" r="1"/></svg>
+          <span>рулетка</span>
         </button>
       </div>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero__copy">
-        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>Личный чек-лист · Metacritic</p>
-        <h1>250 игр,<br>которые <em>стоит пройти</em></h1>
-        <p class="lede">Неофициальный топ по Metascore. Отмечайте пройденные игры, ставьте свою оценку и смотрите, сколько осталось.</p>
-        <div class="hero__actions">
-          <button class="btn btn--primary btn--lg" type="button" data-random>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8L12 3Z"/><path d="M18.5 15l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
-            Что пройти дальше?
-          </button>
-          <a class="btn btn--soft btn--lg" href="#collection">К коллекции
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
-          </a>
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero__grid">
+        <div class="hero__lead">
+          <p class="hero__kicker"><span class="status-dot" aria-hidden="true"></span> личный чек-лист <span class="hero__slash">/</span> metacritic · без дублей</p>
+          <h1 class="hero__title" id="heroTitle">
+            <span class="hero__number">250</span>
+            <span class="hero__words">легенд<br><span>на одной полке.</span></span>
+          </h1>
+          <p class="hero__lede">Отмечай пройденное, ставь свою оценку и закрывай список в своём темпе. Без аккаунтов — прогресс живёт в браузере.</p>
+          <div class="hero__actions">
+            <button class="button button--orange button--large" type="button" data-random>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+              Случайная игра
+            </button>
+            <a class="button button--line button--large" href="#collection">
+              Смотреть полку
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+          <p class="hero__note">250 игр · оценки 91–99 · данные Metacritic</p>
         </div>
-      </div>
 
-      <aside class="progress-card" aria-label="Ваш прогресс">
-        <div class="progress-card__top">
-          <div class="ring" aria-hidden="true">
-            <svg viewBox="0 0 120 120">
-              <defs>
-                <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#e9ff9a"/><stop offset="1" stop-color="#4ade80"/>
-                </linearGradient>
-              </defs>
-              <circle class="ring__track" cx="60" cy="60" r="52"/>
-              <circle class="ring__value" id="ringValue" cx="60" cy="60" r="52" pathLength="100"/>
-            </svg>
-            <div class="ring__label"><strong id="heroPercent">0%</strong><span>пройдено</span></div>
+        <aside class="save-card" aria-label="Твой прогресс">
+          <div class="save-card__top">
+            <span>твой сейв</span>
+            <span class="save-card__local"><i aria-hidden="true"></i>локально</span>
           </div>
-          <div class="progress-card__headline">
-            <span class="mini-label">Ваш прогресс</span>
-            <strong id="heroCount">0 из 250</strong>
-            <span id="heroRemaining">250 игр впереди</span>
+
+          <div class="save-card__score">
+            <strong id="heroPercent">0%</strong>
+            <span id="heroCount">0 из 250</span>
           </div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat"><span>Пройдено</span><strong id="statDone">0</strong></div>
-          <div class="stat"><span>Средняя оценка</span><strong><span id="statAvg">—</span><small id="statAvgUnit"></small></strong></div>
-          <div class="stat"><span>В этом году</span><strong id="statYear">0</strong></div>
-          <div class="stat"><span>Осталось</span><strong id="statLeft">250</strong></div>
-        </div>
-        <p class="progress-card__hint" id="storageHint">Отметки сохраняются в этом браузере.</p>
-      </aside>
+
+          <div class="progress-ticks" id="heroTicks" aria-hidden="true"></div>
+          <p class="save-card__remaining" id="heroRemaining">250 игр впереди</p>
+
+          <div class="spotlight">
+            <span class="spotlight__label" id="spotlightLabel">следующая цель</span>
+            <button class="spotlight__game" id="spotlightOpen" type="button">
+              <img id="spotlightCover" src="assets/covers/the-legend-of-zelda-ocarina-of-time.webp" alt="" width="64" height="88">
+              <span class="spotlight__copy">
+                <span class="spotlight__rank" id="spotlightRank">№ 1</span>
+                <strong id="spotlightTitle">The Legend of Zelda: Ocarina of Time</strong>
+                <span class="spotlight__meta" id="spotlightMeta">1998 · Metascore 99</span>
+              </span>
+              <span class="spotlight__arrow" aria-hidden="true">↗</span>
+            </button>
+          </div>
+
+          <div class="save-card__stats">
+            <div class="stat"><span>пройдено</span><strong id="statDone">0</strong></div>
+            <div class="stat"><span>средняя</span><strong><span id="statAvg">—</span><small id="statAvgUnit"></small></strong></div>
+            <div class="stat"><span>за год</span><strong id="statYear">0</strong></div>
+            <div class="stat"><span>осталось</span><strong id="statLeft">250</strong></div>
+          </div>
+
+          <p class="save-card__hint" id="storageHint">Отметки сохраняются в этом браузере.</p>
+        </aside>
+      </div>
     </section>
 
-    <section class="collection" id="collection" aria-labelledby="collectionTitle">
-      <div class="collection__head">
+    <section class="collection" id="collection" tabindex="-1" aria-labelledby="collectionTitle">
+      <div class="shelf-head">
         <div>
-          <p class="eyebrow">Коллекция</p>
-          <h2 id="collectionTitle">Все 250 игр</h2>
+          <p class="shelf-kicker">коллекция <span aria-hidden="true">/</span> 250</p>
+          <h2 id="collectionTitle">Твоя полка</h2>
         </div>
         <p class="results" id="resultsCount" aria-live="polite">250 игр</p>
       </div>
 
-      <div class="filters">
+      <div class="filter-deck">
         <label class="field field--search">
           <span class="field__label">Поиск</span>
           <span class="search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
             <input id="searchInput" type="search" placeholder="Название игры" autocomplete="off" spellcheck="false">
-            <button class="search__clear" id="searchClear" type="button" aria-label="Очистить поиск" hidden>&times;</button>
+            <button class="search__clear" id="searchClear" type="button" aria-label="Очистить поиск" hidden>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
+            </button>
             <kbd class="search__kbd" id="searchKbd" aria-hidden="true">/</kbd>
           </span>
         </label>
@@ -141,74 +180,76 @@
           </select></span>
         </label>
 
-        <button class="btn btn--ghost btn--reset" id="resetFilters" type="button" hidden>Сбросить</button>
+        <button class="button button--line reset-button" id="resetFilters" type="button" hidden>Сбросить</button>
       </div>
 
-      <div class="status-row">
+      <div class="shelf-status">
         <div class="segmented" role="group" aria-label="Фильтр по статусу">
           <button type="button" data-status="all" aria-pressed="true">Все <span class="seg__count" id="countAll">250</span></button>
           <button type="button" data-status="done" aria-pressed="false">Пройдено <span class="seg__count" id="countDone">0</span></button>
-          <button type="button" data-status="not" aria-pressed="false">Не пройдено <span class="seg__count" id="countNot">250</span></button>
+          <button type="button" data-status="not" aria-pressed="false">Впереди <span class="seg__count" id="countNot">250</span></button>
         </div>
-        <p class="shortcut-note">Нажмите <kbd>/</kbd>, чтобы найти игру</p>
+        <p class="shortcut-note">Нажми <kbd>/</kbd>, чтобы найти игру</p>
       </div>
 
       <div class="game-grid" id="gameGrid"></div>
 
       <div class="empty" id="emptyState" hidden>
-        <div class="empty__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M8.5 11h5"/></svg>
-        </div>
-        <h3>Ничего не нашлось</h3>
-        <p>Попробуйте изменить запрос или сбросить фильтры.</p>
-        <button class="btn btn--primary" id="resetEmpty" type="button">Сбросить фильтры</button>
+        <span class="empty__mark" aria-hidden="true">?</span>
+        <h3>Пусто на этой полке</h3>
+        <p>Попробуй другой запрос или убери фильтры.</p>
+        <button class="button button--orange" id="resetEmpty" type="button">Сбросить фильтры</button>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
+  <footer class="site-footer">
     <div class="footer__inner">
       <div class="footer__brand">
-        <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
-        <div><strong>ТОП 250</strong><p>Личный трекер прохождения. Без аккаунтов и серверов — только вы и список.</p></div>
+        <a class="brand brand--footer" href="#top" aria-label="полка 250 — наверх">
+          <span class="brand__mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+          <span class="brand__word">полка</span>
+          <span class="brand__edition">250</span>
+        </a>
+        <p>Личный трекер прохождения. Без аккаунтов и серверов — только ты и список.</p>
       </div>
       <div class="footer__meta">
         <p>Данные: <a href="https://www.metacritic.com/browse/games/score/metascore/all/all/filtered" target="_blank" rel="noopener noreferrer">Metacritic</a> · обновлено <span id="dataUpdated">—</span></p>
-        <p>Неофициальный проект, не связан с Metacritic. Обложки принадлежат правообладателям.</p>
-        <p><button class="link" type="button" data-open-data>Экспорт и импорт прогресса</button> · <span id="footerCount">0 из 250</span></p>
+        <p>Без переизданий, ремейков и сборников. Неофициальный проект; обложки принадлежат правообладателям.</p>
+        <p><button class="footer__link" type="button" data-open-data>Экспорт и импорт</button> · <span id="footerCount">0 из 250</span></p>
       </div>
     </div>
   </footer>
 
-  <dialog class="modal game-modal" id="gameDialog" aria-labelledby="gameTitle">
-    <div class="game-modal__inner">
-      <button class="icon-btn modal__close" type="button" data-close="gameDialog" aria-label="Закрыть">
+  <dialog class="game-dialog" id="gameDialog" aria-labelledby="gameTitle">
+    <div class="game-sheet">
+      <button class="icon-button modal__close" type="button" data-close="gameDialog" aria-label="Закрыть">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
 
-      <div class="game-modal__cover" id="gameCoverWrap">
+      <div class="game-sheet__poster" id="gameCoverWrap">
         <img id="gameCover" alt="" width="340" height="465">
-        <span class="rank-badge" id="gameRank" aria-hidden="true"></span>
-        <span class="score-badge" id="gameScore" aria-hidden="true"></span>
+        <span class="poster__rank" id="gameRank"></span>
+        <span class="poster__score" id="gameScore"></span>
       </div>
 
-      <div class="game-modal__content">
+      <div class="game-sheet__body">
         <p class="eyebrow" id="gameEyebrow"></p>
-        <h2 class="game-modal__title" id="gameTitle"></h2>
-        <p class="game-modal__meta" id="gameMeta"></p>
-        <p class="game-modal__desc" id="gameDesc"></p>
+        <h2 class="game-sheet__title" id="gameTitle"></h2>
+        <p class="game-sheet__meta" id="gameMeta"></p>
+        <p class="game-sheet__desc" id="gameDesc"></p>
         <div class="tag-list" id="gameGenres"></div>
 
         <div class="completion">
           <label class="switch">
             <input type="checkbox" id="doneToggle">
             <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
-            <span class="switch__text"><strong>Я прошёл эту игру</strong><span id="doneHint">Отметьте игру, чтобы добавить дату и оценку</span></span>
+            <span class="switch__text"><strong>Я прошёл эту игру</strong><span id="doneHint">Отметь игру, чтобы добавить дату и оценку</span></span>
           </label>
         </div>
 
         <fieldset class="details" id="detailsFields" disabled>
-          <legend>Детали прохождения</legend>
+          <legend>Мои детали</legend>
           <div class="details__grid">
             <label class="field">
               <span class="field__label">Дата завершения</span>
@@ -217,27 +258,27 @@
             <div class="field">
               <span class="field__label" id="ratingLabel">Моя оценка <span class="rating__hint">1–10</span></span>
               <div class="rating" id="ratingGroup" role="radiogroup" aria-labelledby="ratingLabel"></div>
-              <button class="link link--small" id="ratingClear" type="button" hidden>Убрать оценку</button>
+              <button class="text-button" id="ratingClear" type="button" hidden>Убрать оценку</button>
             </div>
           </div>
         </fieldset>
 
-        <div class="game-modal__footer">
+        <div class="game-sheet__footer">
           <span class="save-state" id="saveState">Изменения сохраняются автоматически</span>
-          <button class="btn btn--primary" type="button" data-close="gameDialog">Готово</button>
+          <button class="button button--ink" type="button" data-close="gameDialog">Готово</button>
         </div>
       </div>
     </div>
   </dialog>
 
-  <dialog class="modal data-modal" id="dataDialog" aria-labelledby="dataTitle">
-    <div class="data-modal__inner">
-      <button class="icon-btn modal__close" type="button" data-close="dataDialog" aria-label="Закрыть">
+  <dialog class="data-dialog" id="dataDialog" aria-labelledby="dataTitle">
+    <div class="data-sheet">
+      <button class="icon-button modal__close" type="button" data-close="dataDialog" aria-label="Закрыть">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
-      <p class="eyebrow">Резервная копия</p>
-      <h2 id="dataTitle">Ваш прогресс</h2>
-      <p class="data-modal__lede">Отметки хранятся только в этом браузере. Скачайте JSON-файл, чтобы перенести прогресс на другое устройство или не потерять его.</p>
+      <p class="eyebrow">сейв-файл</p>
+      <h2 id="dataTitle">Твой прогресс</h2>
+      <p class="data-sheet__lede">Отметки хранятся только в этом браузере. Скачай файл, чтобы перенести полку на другое устройство или не потерять её.</p>
 
       <div class="data-stats">
         <div><strong id="dataDone">0</strong><span>отметок</span></div>
@@ -246,13 +287,13 @@
       </div>
 
       <div class="data-actions">
-        <button class="btn btn--primary" id="exportBtn" type="button">
+        <button class="button button--ink" id="exportBtn" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
-          Скачать JSON
+          Скачать сейв
         </button>
-        <button class="btn btn--soft" id="importBtn" type="button">
+        <button class="button button--line" id="importBtn" type="button">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>
-          Загрузить JSON
+          Загрузить сейв
         </button>
         <input type="file" id="importFile" accept=".json,application/json" hidden>
       </div>
@@ -265,22 +306,22 @@
       </div>
 
       <div class="danger-zone">
-        <div><strong>Начать заново</strong><span>Удалить все отметки и оценки</span></div>
-        <button class="btn btn--danger" id="resetBtn" type="button">Сбросить</button>
+        <div><strong>Очистить полку</strong><span>Удалить все отметки и оценки</span></div>
+        <button class="button button--danger" id="resetBtn" type="button">Удалить</button>
       </div>
 
-      <p class="data-credit">Список составлен по Metascore сервиса Metacritic. Сайт не является официальным проектом Metacritic.</p>
+      <p class="data-credit">Список составлен по Metascore Metacritic: без переизданий, ремейков и сборников. Сайт не является официальным проектом Metacritic.</p>
     </div>
   </dialog>
 
-  <dialog class="modal modal--confirm" id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+  <dialog class="confirm-dialog" id="confirmDialog" aria-labelledby="confirmTitle" aria-describedby="confirmText">
     <form class="confirm" method="dialog">
-      <p class="eyebrow">Подтверждение</p>
+      <p class="eyebrow">подтверждение</p>
       <h2 id="confirmTitle"></h2>
       <p id="confirmText"></p>
       <div class="confirm__actions">
-        <button class="btn btn--ghost" type="submit" value="cancel">Отмена</button>
-        <button class="btn btn--danger" type="submit" value="confirm" id="confirmOk">Подтвердить</button>
+        <button class="button button--line" type="submit" value="cancel">Отмена</button>
+        <button class="button button--danger" type="submit" value="confirm" id="confirmOk">Подтвердить</button>
       </div>
     </form>
   </dialog>
@@ -291,6 +332,6 @@
     <button class="toast__action" id="toastAction" type="button" hidden></button>
   </div>
 
-  <noscript><div class="noscript">Для работы чек-листа нужен JavaScript. Включите его в настройках браузера.</div></noscript>
+  <noscript><div class="noscript">Для работы чек-листа нужен JavaScript. Включи его в настройках браузера.</div></noscript>
 </body>
 </html>
