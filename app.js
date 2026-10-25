@@ -533,9 +533,13 @@
     }
 
     // Перестройка сетки на мгновение убирает карточки из DOM, и браузер
-    // сбрасывает прокрутку. Возвращаем её на место после перестановки.
+    // сбрасывает прокрутку. Возвращаем её сразу, без плавной анимации.
     if (orderChanged && (window.scrollX !== scrollX || window.scrollY !== scrollY)) {
+      const root = document.documentElement;
+      const previousBehavior = root.style.scrollBehavior;
+      root.style.scrollBehavior = 'auto';
       window.scrollTo(scrollX, scrollY);
+      root.style.scrollBehavior = previousBehavior;
     }
 
     els.emptyState.hidden = visible.length !== 0;
