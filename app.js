@@ -513,15 +513,29 @@
     }).sort(compareGames);
 
     const visibleSet = new Set(visible.map((game) => game.slug));
-    const fragment = document.createDocumentFragment();
-    for (const game of visible) {
-      const refs = cardRefs.get(game.slug);
-      if (refs) fragment.append(refs.card);
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const currentOrder = Array.from(els.gameGrid.children).filter((card) => !card.hidden);
+    const orderChanged = visible.length !== currentOrder.length
+      || visible.some((game, index) => cardRefs.get(game.slug)?.card !== currentOrder[index]);
+
+    if (orderChanged) {
+      const fragment = document.createDocumentFragment();
+      for (const game of visible) {
+        const refs = cardRefs.get(game.slug);
+        if (refs) fragment.append(refs.card);
+      }
+      els.gameGrid.append(fragment);
     }
-    els.gameGrid.append(fragment);
     for (const game of GAMES) {
       const refs = cardRefs.get(game.slug);
       if (refs) refs.card.hidden = !visibleSet.has(game.slug);
+    }
+
+    // Перестройка сетки на мгновение убирает карточки из DOM, и браузер
+    // сбрасывает прокрутку. Возвращаем её на место после перестановки.
+    if (orderChanged && (window.scrollX !== scrollX || window.scrollY !== scrollY)) {
+      window.scrollTo(scrollX, scrollY);
     }
 
     els.emptyState.hidden = visible.length !== 0;
